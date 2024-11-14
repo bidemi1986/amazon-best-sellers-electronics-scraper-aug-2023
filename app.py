@@ -1,15 +1,3 @@
-# How to Scrape Amazon Best Sellers in Electronics - Aug 2023
-
-If you are interested in e-commerce then Amazon is the jackpot of e-commerce data. As with most websites, Amazon does not provide API access to their data which means you’re left to figure out the best ways to scrape the data you need. Today I wanted the best selling items in the electronics category for August 2023. I’m happy to report it wasn’t that hard to scrape! 
-
-Unlike some heavily protected websites, I didn't need to analyze extensive network request data, I didn't need selenium, and I didn't need to use a proxy to get the original data. I did however need to rate limit my requests. Amazon is big on request throttling. 
-
-Below is the code I used to scrape the site. Let me know what you think.
-
-
-## Code Snippet
-```python
-# amazon.py
 from pythonjsonlogger import jsonlogger
 from aiolimiter import AsyncLimiter
 from urllib.parse import urlparse
@@ -25,7 +13,7 @@ from typing_extensions import Annotated
 from pathlib import Path
 import os
 from bs4 import BeautifulSoup
-
+from swiftshadow import QuickProxy
 # Configures a json style logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -33,6 +21,11 @@ logHandler = logging.StreamHandler()
 formatter = jsonlogger.JsonFormatter()
 logHandler.setFormatter(formatter)
 logger.addHandler(logHandler)
+
+print(f"QuickProxy proxy",QuickProxy())
+newproxy = QuickProxy()
+valid_proxy = newproxy[1]+"://"+newproxy[0]
+print(f"valid_proxy...",valid_proxy)
 
 async def HTTPClientDownloader(url, settings):
     max_tcp_connections = settings['max_tcp_connections']
@@ -119,7 +112,7 @@ def amazon(
     settings = {
         "max_tcp_connections": max_tcp_connections,
         "proxies": [
-            "http://localhost:8765",
+           valid_proxy # "http://localhost:8765",
         ],
 
         "headers": {
@@ -155,31 +148,6 @@ def amazon(
     print(items)
 
 
+
 if __name__ == '__main__':
     cli_app()
-```
-
-Use the following command to run the cli script and fetch that amazon page.
-
-```sh
-python amazon_scaper.py -u https://www.amazon.com/Best-Sellers-Electronics/zgbs/electronics/ref=zg_bs_nav_0 -o best-sellers-electronics.html
-
-```
-
-# About Project
-Forked from Steven Natera's Amazon scraper project, 
-Contact Steven Natera on Twitter [@stevennatera](https://twitter.com/stevennatera) if you want to say hello.
-
-# Web Scraping For Beginners Course
-
-The art of web scraping takes years to master. But if you need data today, practicing for years is out of the question. The good news is I've created a short course to help you learn the essentials to web scraping so you can get your data fast without spending so much money or without wasting your precious time.
-
-In the course you'll learn: 
-
-- how to analyze a website to determine the best way to scrape data
-- how to use proxies to scrape to bypass anti-bot protection (Cloudflare)
-- how to scrape web sites with Javascript
-- where to store your data
-- ... and more
-
-For the complete table of contents, [click here to learn more.](https://stevennatera.gumroad.com/l/isfsd)
