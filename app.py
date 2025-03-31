@@ -33,9 +33,9 @@ async def HTTPClientDownloader(url, settings):
     # uses the rate limiter
     async with settings["rate"]:
 
-        # open a session to make the requests
-        connector = aiohttp.TCPConnector(limit=max_tcp_connections)
-        async with aiohttp.ClientSession(connector=connector) as session:
+        # open a session to make the requests with increased max_field_size
+        connector = aiohttp.TCPConnector(limit=max_tcp_connections)  # Increased header size limit
+        async with aiohttp.ClientSession(connector=connector, max_field_size=16384) as session:
             start_time = time.perf_counter()  # Start timer
 
             proxy = None
@@ -63,6 +63,41 @@ async def HTTPClientDownloader(url, settings):
                 loc = os.path.join(settings['cache_dir'], settings["output_path"])
                 async with aiofiles.open(loc, mode="w") as fd:
                     await fd.write(html)
+
+
+async def HTTPClientDownloader4rag(url, settings):
+    max_tcp_connections = settings['max_tcp_connections']
+
+    # uses the rate limiter
+    async with settings["rate"]:
+
+        # open a session to make the requests with increased max_field_size
+        connector = aiohttp.TCPConnector(limit=max_tcp_connections)  # Increased header size limit
+        async with aiohttp.ClientSession(connector=connector, max_field_size=16384) as session:
+            start_time = time.perf_counter()  # Start timer
+
+            proxy = None
+            html = None
+
+            # makes a GET request to the target website
+            async with session.get(url, proxy=proxy, headers=settings['headers']) as response:
+                html = await response.text()
+                end_time = time.perf_counter()  # Stop timer
+                elapsed_time = end_time - start_time  # Calculate time taken to get response
+                status = response.status
+
+                logger.info(
+                    msg="Request complete.",
+                    extra={
+                        "status": status,
+                        "url": url,
+                        "elapsed_time": f"{elapsed_time:4f}",
+                    }
+                )
+
+                return html
+
+
 
 async def dispatch(url, settings):
     await HTTPClientDownloader(url, settings)
